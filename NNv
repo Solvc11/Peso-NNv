@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peso Neonatal - Sala</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body { font-family: Arial; margin: 10px; }
+h2 { text-align: center; font-size: 18px; }
+
+.tabla-container { overflow-x: auto; }
+
+table {
+    border-collapse: collapse;
+    min-width: 650px;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 4px;
+    text-align: center;
+    font-size: 12px;
+}
+
+th { background-color: #f2f2f2; }
+
+input {
+    width: 60px;
+    font-size: 12px;
+    padding: 3px;
+    text-align: center;
+}
+
+button {
+    margin: 4px;
+    padding: 8px;
+    font-size: 12px;
+}
+
+.rojo {
+    color: red;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🍼 Control Peso Neonatal</h2>
+
+<button onclick="agregarFila()">➕ Agregar registro</button>
+<button onclick="calcular()">📊 Calcular</button>
+<button onclick="graficar()">📈 Ver gráfico</button>
+
+<div class="tabla-container">
+<table>
+<thead>
+<tr>
+<th>Sala</th>
+<th>Peso Nac</th>
+<th>D1</th>
+<th>D2</th>
+<th>D3</th>
+<th>%1</th>
+<th>%2</th>
+<th>%3</th>
+<th>❌</th>
+</tr>
+</thead>
+
+<tbody id="bodyTabla">
+<tr>
+<td><input placeholder="Sala"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td></td>
+<td></td>
+<td></td>
+<td><button onclick="eliminarFila(this)">X</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>📈 Evolución de peso</h3>
+<canvas id="grafico" height="120"></canvas>
+
+<script>
+
+let chart;
+
+// Agregar fila SIN borrar datos
+function agregarFila() {
+    let tabla = document.getElementById("bodyTabla");
+
+    let fila = document.createElement("tr");
+
+    fila.innerHTML = `
+    <td><input placeholder="Sala"></td>
+    <td><input type="number"></td>
+    <td><input type="number"></td>
+    <td><input type="number"></td>
+    <td><input type="number"></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><button onclick="eliminarFila(this)">X</button></td>
+    `;
+
+    tabla.appendChild(fila);
+}
+
+// Eliminar fila
+function eliminarFila(btn) {
+    btn.parentNode.parentNode.remove();
+}
+
+// Calcular porcentajes
+function calcular() {
+
+    let filas = document.querySelectorAll("#bodyTabla tr");
+
+    filas.forEach(fila => {
+
+        let inputs = fila.querySelectorAll("input");
+
+        let pn = parseFloat(inputs[1].value);
+        let d1 = parseFloat(inputs[2].value);
+        let d2 = parseFloat(inputs[3].value);
+        let d3 = parseFloat(inputs[4].value);
+
+        if (!pn) return;
+
+        let p1 = ((pn - d1)/pn*100);
+        let p2 = ((pn - d2)/pn*100);
+        let p3 = ((pn - d3)/pn*100);
+
+        let c = fila.querySelectorAll("td");
+
+        c[5].innerHTML = p1.toFixed(1);
+        c[5].className = (p1 > 5.6) ? "rojo" : "";
+
+        c[6].innerHTML = p2.toFixed(1);
+        c[6].className = (p2 > 10) ? "rojo" : "";
+
+        c[7].innerHTML = p3.toFixed(1);
+        c[7].className = (p3 > 10) ? "rojo" : "";
+    });
+}
+
+// Graficar TODOS los registros
+function graficar() {
+
+    let filas = document.querySelectorAll("#bodyTabla tr");
+
+    let datasets = [];
+
+    filas.forEach((fila, index) => {
+
+        let inputs = fila.querySelectorAll("input");
+
+        let sala = inputs[0].value || "Sala";
+        let pn = parseFloat(inputs[1].value);
+        let d1 = parseFloat(inputs[2].value);
+        let d2 = parseFloat(inputs[3].value);
+        let d3 = parseFloat(inputs[4].value);
+
+        if (!pn) return;
+
+        datasets.push({
+            label: sala + " #" + (index + 1),
+            data: [pn, d1, d2, d3],
+            fill: false,
+            tension: 0.2
+        });
+    });
+
+    if (chart) chart.destroy();
+
+    let ctx = document.getElementById("grafico");
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ["Nacimiento", "D1", "D2", "D3"],
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+</script>
+
+</body>
+</html>
